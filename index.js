@@ -16,7 +16,7 @@
     _renderColLine(ops); //渲染列
     _renderRowLine(ops); //渲染行
     ops.random = _getRandom(ops.data); //获取随机值列表
-    ops.nodes = _createNode(ops.data, ops.range); //将data转化为node
+    ops.nodes = _createNode(ops); //将data转化为node
     _renderNode(ops); //将nodes渲染程dom的真实node
   }
 
@@ -32,39 +32,62 @@
     return Object.getOwnPropertyNames(obj);
   }
 
-  function _createNode(data, range) {
+  function _createNode(ops) {
     var nodes = [];
-    var max = range[1];
+    var data = ops.data;
+    var range = ops.range;
     var min = range[0];
+    var max = range[1];
     var obj = { direction: "down" };
     var length = data.length;
-    var current = "";
-    var minus = true;
-    var i;
+    var prev_index = 0;
+    var curr_index = 0;
+    var i, node, current;
+    var bool = true;
 
+    // obj : { direction: "down" , min:1 , max:5 , 龙:9}
     for (i = 0; i < length; i++) {
       if (i === 0) {
-        current = data[i];
+        current = data[i]; //大,小,小,大
         obj[data[i]] = 1;
       } else {
-        //如果当前值不等于循环值,且obj中不存在循环值属性,需要设置新的obj
+        //如果current不等于循环值,且obj中不存在循环值属性,需要设置新的obj
         if (current !== data[i] && !obj[data[i]]) {
+          if (obj[current] > range[1]) {
+            prev_index = nodes.length;
+          }
           obj.min = min;
           obj.max = max;
           nodes.push(obj);
           obj = { direction: "down" };
-          minus = true;
           current = data[i];
           obj[data[i]] = 1;
+          max = range[1];
+          min = range[0];
+          bool = true;
         } else {
+          //在min和max的范围之内,当前属性值正常往下加
           if (obj[data[i]] >= min && obj[data[i]] < max) {
             obj[data[i]]++;
           } else {
+            //当统计总数超多max的最大限制之后,需要将方向设置为右边,同时继续累积当前的统计数
+            curr_index = nodes.length;
             obj[data[i]]++;
             obj["direction"] = "right";
-            if (minus) {
-              max--;
-              minus = false;
+
+            if (prev_index !== 0) {
+              node = nodes.slice(prev_index, prev_index + 1)[0];
+              if (node) {
+                //当前累积值与最大值的差大于两个节点之间的index差的时候,继续累加会顶到之前的节点,需要减少当前节点的最大值
+                var key = intersection(
+                  Object.getOwnPropertyNames(node),
+                  ops.random
+                );
+                if (node[key] - node["max"] > curr_index - prev_index) {
+                  bool && max--;
+                  bool = false;
+                }
+              }
             }
           }
         }
@@ -72,8 +95,9 @@
     }
 
     console.group();
-    console.dir("传入的数据", data);
-    console.dir("生成的数据", nodes);
+    console.log("传入的数据", data);
+    console.log("生成的数据", nodes);
+    console.groupEnd();
 
     return nodes;
   }
@@ -98,7 +122,7 @@
     var nodes = ops.nodes;
     var random = ops.random;
     var length = nodes.length;
-    var i, j, k;
+    var i, j, k, child, bg;
     for (i = 0; i < length; i++) {
       var item = nodes[i];
       var arr = intersection(Object.getOwnPropertyNames(item), random);
@@ -106,15 +130,15 @@
       if (arr.length === 0) {
         throw new Error("当前的节点属性有错误");
       }
+
       var num = item[arr[0]];
-      var bg;
       if (arr[0] === random[0]) bg = "#4F62EA";
       if (arr[0] === random[1]) bg = "#C30E0E";
 
       //当num大于等于最小值的时候,或者小于等于最大值时候,正常渲染
       if (num >= item.min && num <= item.max) {
         for (j = 0; j < num; j++) {
-          var child = document.createElement("div");
+          child = document.createElement("div");
           addCss(child, {
             left: i * 30 + 3 + "px",
             top: j * 30 + 3 + "px",
@@ -135,7 +159,7 @@
       } else {
         var minus = num - item.max;
         for (j = 0; j < item.max; j++) {
-          var child = document.createElement("div");
+          child = document.createElement("div");
           addCss(child, {
             left: i * 30 + 3 + "px",
             top: j * 30 + 3 + "px",
@@ -155,10 +179,10 @@
         }
 
         for (k = 0; k < minus; k++) {
-          var child = document.createElement("div");
+          child = document.createElement("div");
           addCss(child, {
             left: i * 30 + k * 30 + 3 + "px",
-            top: j * 30 + 3 + "px",
+            top: (j - 1) * 30 + 3 + "px",
             position: "absolute",
             width: "24px",
             height: "24px",
