@@ -1,4 +1,4 @@
-(function(win, dom) {
+(function (win, dom) {
   var defaultOptions = {
     content: null, //容器id
     contentElement: null, //容器元素
@@ -6,7 +6,8 @@
     random: [], //所有的字段
     range: [1, 5], //最小行/最大行
     nodes: [], //生成的节点
-    rule: function() {}
+    rule: function () {
+    }
   };
 
   function createDewChart(options) {
@@ -38,7 +39,7 @@
     var range = ops.range;
     var min = range[0];
     var max = range[1];
-    var obj = { direction: "down" };
+    var obj = {direction: "down"};
     var length = data.length;
     var prev_index = 0;
     var curr_index = 0;
@@ -59,7 +60,7 @@
           obj.min = min;
           obj.max = max;
           nodes.push(obj);
-          obj = { direction: "down" };
+          obj = {direction: "down"};
           current = data[i];
           obj[data[i]] = 1;
           max = range[1];
@@ -79,11 +80,8 @@
               node = nodes.slice(prev_index, prev_index + 1)[0];
               if (node) {
                 //当前累积值与最大值的差大于两个节点之间的index差的时候,继续累加会顶到之前的节点,需要减少当前节点的最大值
-                var key = intersection(
-                  Object.getOwnPropertyNames(node),
-                  ops.random
-                );
-                if (node[key] - node["max"] > curr_index - prev_index) {
+                var key = intersection(Object.getOwnPropertyNames(node), ops.random);
+                if ((node[key] - node["max"]) > (curr_index - prev_index)) {
                   bool && max--;
                   bool = false;
                 }
@@ -94,10 +92,10 @@
       }
     }
 
-    console.group();
-    console.log("传入的数据", data);
-    console.log("生成的数据", nodes);
-    console.groupEnd();
+    // console.group();
+    // console.log("传入的数据", data);
+    // console.log("生成的数据", nodes);
+    // console.groupEnd();
 
     return nodes;
   }
@@ -281,7 +279,7 @@
     typeof win.define === "function" &&
     (win.define.amd || win.define.cmd)
   ) {
-    win.define("createDewChart", [], function() {
+    win.define("createDewChart", [], function () {
       return createDewChart;
     });
   } else {
